@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/entries/{entryId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasAll(['content', 'type', 'sourceSessionId', 'createdAt'])
+        && request.resource.data.content is string
+        && request.resource.data.content.size() < 5000
+        && request.resource.data.type in ['habit', 'journal', 'summary', 'retrospective']
+        && request.resource.data.createdAt is timestamp;
+      allow update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/usage/counters {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        && (
+          (('isAdmin' in request.auth.token) && request.auth.token.isAdmin == true)
+          || (
+            request.resource.data.dailySaveCount is int
+            && request.resource.data.dailySaveCount <= 5
+            && request.resource.data.dailyGeminiCallCount is int
+            && request.resource.data.dailyGeminiCallCount <= 60
+            && (
+              !('dailyRetrospectiveCount' in request.resource.data)
+              || (
+                request.resource.data.dailyRetrospectiveCount is int
+                && request.resource.data.dailyRetrospectiveCount <= 1
+              )
+            )
+          )
+        );
+    }
+
+    match /users/{userId}/sessions/{sessionId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasAll(['turnCount', 'templateId', 'startedAt'])
+        && request.resource.data.templateId in ['habit-tracking', 'journal-reflection'];
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.turnCount <= 20;
+    }
+  }
+}

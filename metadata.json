@@ -1,0 +1,6 @@
+{
+  "name": "Clarity",
+  "description": "A quiet space to think out loud, untangle your thoughts, and find clarity without the burden of traditional journaling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
